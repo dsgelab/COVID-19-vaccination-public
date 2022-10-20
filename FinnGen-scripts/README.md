@@ -17,6 +17,7 @@
   * Second, feed this script as an argument into metal-bash-script.sh. 
 
 * Mendelian Randomization using MRBase
+  * Run MendelianRandomization.R
 
 * Polygenic Risk Scores using PRS-CS 
   * As with GWAS, PRS analysis with PRS-CS has a pipeline within the FinnGen infrastructure. Please refer to https://finngen.gitbook.io/finngen-analyst-handbook/working-in-the-sandbox/running-analyses-in-sandbox/how-to-run-prs to understad how to run PRS-CS within the FinnGen infrastructure.

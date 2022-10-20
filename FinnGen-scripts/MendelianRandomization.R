@@ -2,7 +2,7 @@ library(TwoSampleMR)
 library(data.table)
 
 ##Read exposure data using MRBase - B2 excluding 23andMe and FinnGen
-severity_exp_dat <- read_exposure_data(filename = "zcat < /Users/jermy/Downloads/COVID19_HGI_B2_ALL_leave_23andme_and_FinnGen_20220403.tsv.gz",
+severity_exp_dat <- read_exposure_data(filename = "zcat < COVID19_HGI_B2_ALL_leave_23andme_and_FinnGen_20220403.tsv.gz",
                                        sep = "\t",
                                        snp_col = "rsid",
                                        beta_col = "all_inv_var_meta_beta",
@@ -26,7 +26,7 @@ severity_exp_dat <- clump_data(severity_exp_dat)
 ##Read in summary statistics
 outcome_dat <- read_outcome_data(
   snps = severity_exp_dat$SNP,
-  filename = "zcat < /Users/jermy/Documents/COVID_VAX/Results/COVIDVaxwRSID.gz",
+  filename = "zcat < COVIDVaxwRSID.gz",
   sep = "\t",
   snp_col = "ID",
   beta_col = "BETA",
@@ -40,7 +40,7 @@ outcome_dat <- read_outcome_data(
   samplesize_col="N"
 )
 
-#Harmonize Data - Drops down to 31 SNPs due to ambiguity
+#Harmonize Data - Drops down to 31 SNPs due to palindromic SNPs that are ambiguous
 dat <- harmonise_data(
   exposure_dat = severity_exp_dat, 
   outcome_dat = outcome_dat
@@ -49,8 +49,8 @@ dat <- harmonise_data(
 #Perform MR
 res <- mr(dat)
 mr_pleiotropy_test(dat)
-write.csv(res, "/Users/jermy/Documents/COVID_VAX/Results/MendRandResultsCOVID19SeveritycausingCOVIDVax.csv")
+write.csv(res, "MendRandResultsCOVID19SeveritycausingCOVIDVax.csv")
 
-png("/Users/jermy/Documents/COVID_VAX/Results/MRSeverityCausingVaccination.png", height=4, width=4, units="in", res=300)
+png("MRSeverityCausingVaccination.png", height=4, width=4, units="in", res=300)
 print(mr_scatter_plot(res, dat))
 dev.off()

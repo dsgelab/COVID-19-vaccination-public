@@ -8,9 +8,13 @@
   * Munging steps have been omitted, however, we follow the default steps suggested in the wiki: https://github.com/bulik/ldsc/wiki/Heritability-and-Genetic-Correlation
   
 * Heritability using Linkage Disequilibrium Score Regression
+  * Run Heritability.sh
   * Munging steps have been omitted, however, we follow the default steps suggested in the wiki: https://github.com/bulik/ldsc/wiki/Heritability-and-Genetic-Correlation
   
 * Meta-analysis using METAL
+  * To run METAL a script is provided as input to the bash. 
+  * First create a script similar to meta-analysis-script.txt. 
+  * Second, feed this script as an argument into metal-bash-script.sh. 
 
 * Mendelian Randomization using MRBase
 

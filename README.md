@@ -75,3 +75,7 @@ Analysis of the highest risk individuals according to the XGBoost model and XGBo
 SHAP values for the different predictors in the XGBoost model were computed as in
 
 `compute_shap_for_xgb.md`
+
+### Finngen - code for the genetics analyses
+
+See the separate README.md file in the folder FinnGen-script/ for details of the gentetics analyses.

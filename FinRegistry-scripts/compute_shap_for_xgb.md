@@ -9,7 +9,7 @@ with open(all_vars_file,'rt') as infile:
         for row in r: all_vars = row
             
 train_file = "/data/projects/vaccination_project/data/ml_downsampled_data_30082022/vaccination_project_combined_variables_wide_30082022_train_downsampled.csv.newheader"#"/data/projects/vaccination_project/data/xgboost_train_data/vaccination_project_combined_variables_wide_05072022_train_imputed_downsampled_80-_withheader.csv"
-p = 0.05  #keep 5% of the lines
+p = 0.005  #keep 5% of the lines
 # keep the header, then take only 5% of lines
 # if random from [0,1] interval is greater than 0.01 the row will be skipped
 df = pd.read_csv(train_file,header=0, skiprows=lambda i: i>0 and random.random() > p,usecols=all_vars)
@@ -19,6 +19,7 @@ df
 
 ```python
 #reformat the data for xgboost
+#from scipy.sparse import csr_matrix
 import numpy as np
 X_train, y_train =  df.drop('COVIDVax',axis=1).values, df.loc[:,'COVIDVax'].values
 bg = X_train[np.random.choice(X_train.shape[0], 100, replace=False)]
@@ -45,7 +46,8 @@ X_pred
 import shap
 # explain the model's predictions using SHAP
 # (same syntax works for LightGBM, CatBoost, scikit-learn, transformers, Spark, etc.)
-explainer = shap.TreeExplainer(model,data=bg,feature_perturbation="interventional",model_output="predict_proba")
+#explainer = shap.TreeExplainer(model,data=bg,feature_perturbation="interventional",model_output="predict_proba")
+explainer = shap.TreeExplainer(model,data=bg,feature_perturbation="interventional")
 shap_values = explainer.shap_values(X_train)
 shap_values
 ```
@@ -56,9 +58,9 @@ import matplotlib
 from matplotlib import pyplot as plt
 #plotting
 shap.initjs()
-shap.summary_plot(shap_values, X_train,plot_type='bar',feature_names=df.columns[:-1],show=False,max_display=50,plot_size=(8,8))
+shap.summary_plot(shap_values, X_train,plot_type='bar',feature_names=df.columns[:-1],show=False,max_display=20,plot_size=(8,8))
 figdir = "/data/projects/vaccination_project/figures/"
-plt.savefig(figdir+'mean_SHAP_per_perdictor_XGBoost_full_model_171022-5-percentage-top50.pdf',dpi=300)
+plt.savefig(figdir+'mean_SHAP_per_perdictor_XGBoost_full_model_160123-5-percentage-top20.pdf',dpi=300)
 ```
 
 
@@ -84,24 +86,35 @@ shap.dependence_plot('EARNINGS_TOT',shap_values[1],X_train,feature_names=df.colu
 
 ```
 
+
+```python
+shap_values
+```
+
+
 ```python
 import numpy as np
-#save to a file the mean SHAP values in the 10% sample of training data
+#save to a file the mean SHAP values in the 5% sample of training data
 outdir = "/data/projects/vaccination_project/data/"
 
 df_pred_shaps = pd.DataFrame()
 df_pred_shaps['predictor'] = list(df.columns)[:-1]#header[:-1]
-df_pred_shaps['mean |SHAP|'] = np.mean(np.abs(shap_values.values),axis=0)
-df_pred_shaps['std |SHAP|'] = np.std(np.abs(shap_values.values),axis=0)
-df_pred_shaps['mean SHAP'] = np.mean((shap_values.values),axis=0)
+#df_pred_shaps['mean |SHAP|'] = np.mean(np.abs(shap_values.values),axis=0)
+#df_pred_shaps['std |SHAP|'] = np.std(np.abs(shap_values.values),axis=0)
+#df_pred_shaps['mean SHAP'] = np.mean((shap_values.values),axis=0)
+
+df_pred_shaps['mean |SHAP|'] = np.mean(np.abs(shap_values),axis=0)
+df_pred_shaps['std |SHAP|'] = np.std(np.abs(shap_values),axis=0)
+df_pred_shaps['mean SHAP'] = np.mean((shap_values),axis=0)
 
 CIs_lower = []
 CIs_higher = []
 
 #compute 95% confidence intervals for the mean SHAP values by bootstrapping
-n_bootstraps = 1000
+n_bootstraps = 50
 rng_seed = 42  # control reproducibility
-N = shap_values.values.shape[0]
+#N = shap_values.values.shape[0]
+N = shap_values.shape[0]
 for j in range(shap_values.shape[1]):
     
     bootstrapped_SHAPs = []
@@ -110,7 +123,8 @@ for j in range(shap_values.shape[1]):
     for i in range(n_bootstraps):
         # bootstrap by sampling with replacement on the prediction indices
         indices = rng.randint(0, N, N)
-        bootstrapped_SHAPs.append(np.mean(np.abs(shap_values.values[indices,:]),axis=0))
+        #bootstrapped_SHAPs.append(np.mean(np.abs(shap_values.values[indices,:]),axis=0))
+        bootstrapped_SHAPs.append(np.mean(np.abs(shap_values[indices,:]),axis=0))
     
     sorted_SHAPs = np.array(bootstrapped_SHAPs)
     sorted_SHAPs.sort()
@@ -127,9 +141,15 @@ for j in range(shap_values.shape[1]):
 df_pred_shaps['mean |SHAP| 95% CI lower'] = CIs_lower
 df_pred_shaps['mean |SHAP| 95% CI upper'] = CIs_higher
 
-df_pred_shaps.to_csv(outdir+'mean_SHAP_per_perdictor_XGBoost_full_model_130922-1-percentage.csv',index=False)
+df_pred_shaps.to_csv(outdir+'mean_SHAP_per_perdictor_XGBoost_full_model_160123-5-percentage.csv',index=False)
 df_pred_shaps.sort_values(by='mean |SHAP|')
 ```
+
+
+```python
+
+```
+
 
 ```python
 import numpy as np
@@ -153,6 +173,7 @@ bootstrapped_SHAPs = np.zeros(shape=(shap_values.shape[1],n_bootstraps))
 
 rng = np.random.RandomState(rng_seed)
 for i in range(n_bootstraps):
+    print("i="+str(i))
     # bootstrap by sampling with replacement on the prediction indices
     indices = rng.randint(0, N, N)
     bootstrapped_SHAPs[:,i] = np.mean(np.abs(shap_values.values[indices,:]),axis=0)
@@ -160,11 +181,23 @@ for i in range(n_bootstraps):
 bootstrapped_SHAPs
 ```
 
+
+```python
+bootstrapped_SHAPs.shape
+```
+
+
 ```python
 sorted_SHAPs = np.sort(bootstrapped_SHAPs,axis=1)
 #sorted_SHAPs.sort(axis=1)
 sorted_SHAPs
 ```
+
+
+```python
+sorted_SHAPs.shape
+```
+
 
 ```python
 # Computing the lower and upper bound of the 90% confidence interval
@@ -183,3 +216,7 @@ df_pred_shaps.to_csv(outdir+'mean_SHAP_per_perdictor_XGBoost_full_model_100822.c
 df_pred_shaps.sort_values(by='mean SHAP')
 ```
 
+
+```python
+
+```
